@@ -140,24 +140,34 @@ class LeafNode extends BPlusNode {
     // See BPlusNode.get.
     @Override
     public LeafNode get(DataBox key) {
-        // TODO(proj2): implement
-
-        return null;
+        return this;
     }
 
     // See BPlusNode.getLeftmostLeaf.
     @Override
     public LeafNode getLeftmostLeaf() {
-        // TODO(proj2): implement
-
-        return null;
+        return this;
     }
 
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
-        // TODO(proj2): implement
+        int lessCount = InnerNode.numLessThan(key, keys);
+        keys.add(lessCount, key);
+        rids.add(lessCount, rid);
 
+        if (keys.size() > metadata.getOrder() * 2) {
+            List<DataBox> rightKeys = keys.subList(metadata.getOrder(), keys.size());
+            List<RecordId> rightRecords = rids.subList(metadata.getOrder(), rids.size());
+
+            keys = keys.subList(0, metadata.getOrder());
+            rids = rids.subList(0, metadata.getOrder());
+            LeafNode rightNode = new LeafNode(metadata, bufferManager, rightKeys, rightRecords, rightSibling, treeContext);
+            rightSibling = Optional.of(rightNode.getPage().getPageNum());
+            sync();
+            page.unpin();
+            return Optional.of(new Pair<>(rightKeys.get(0), rightNode.getPage().getPageNum()));
+        }
         return Optional.empty();
     }
 
@@ -362,9 +372,19 @@ class LeafNode extends BPlusNode {
      */
     public static LeafNode fromBytes(BPlusTreeMetadata metadata, BufferManager bufferManager,
                                      LockContext treeContext, long pageNum) {
-        // TODO(proj2): implement
+        Page page = bufferManager.fetchPage(treeContext, pageNum, false);
+        Buffer buffer = page.getBuffer();
+        assert (buffer.get() == (byte) 1);
 
-        return null;
+        long rightSibling = buffer.getLong();
+        int numsValue = buffer.getInt();
+        List<DataBox> keys = new ArrayList<>();
+        List<RecordId> vs = new ArrayList<>();
+        for (int i = 0; i < numsValue; i++) {
+            keys.add(DataBox.fromBytes(buffer, metadata.getKeySchema()));
+            vs.add(RecordId.fromBytes(buffer));
+        }
+        return new LeafNode(metadata, bufferManager, page, keys, vs, rightSibling >= 0 ? Optional.of(rightSibling) : Optional.empty(), treeContext);
     }
 
     // Builtins //////////////////////////////////////////////////////////////////

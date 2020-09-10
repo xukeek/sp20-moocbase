@@ -237,10 +237,22 @@ public class BPlusTree {
      */
     public void put(DataBox key, RecordId rid) {
         typecheck(key);
-        // TODO(proj2): implement
         // TODO(proj4_part3): B+ tree locking
 
-        return;
+        LeafNode leafNode = root.get(key);
+        Optional<Pair<DataBox, Long>> ss = leafNode.put(key, rid);
+
+    }
+
+    private InnerNode findParent(LeafNode node) {
+        InnerNode prev = null;
+        BPlusNode index = root;
+        while (index != null) {
+            if (index.equals(node)) return prev;
+            if (index instanceof LeafNode) return null;
+            InnerNode i = (InnerNode) index;
+            InnerNode.
+        }
     }
 
     /**

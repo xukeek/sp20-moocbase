@@ -78,25 +78,39 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.get.
     @Override
     public LeafNode get(DataBox key) {
-        // TODO(proj2): implement
-
-        return null;
+        int index = keys.size();
+        for (int i = 0; i < keys.size(); i++) {
+            if (key.compareTo(keys.get(i)) < 0) {
+                index = i;
+                break;
+            }
+        }
+        BPlusNode childNode = getChild(index);
+        return childNode.get(key);
     }
 
     // See BPlusNode.getLeftmostLeaf.
     @Override
     public LeafNode getLeftmostLeaf() {
         assert(children.size() > 0);
-        // TODO(proj2): implement
 
-        return null;
+        BPlusNode leftmostChild = getChild(0);
+        return leftmostChild.getLeftmostLeaf();
     }
 
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
-        // TODO(proj2): implement
+        int lessCount = numLessThan(key, keys);
+        keys.add(lessCount, key);
 
+        if (keys.size() > metadata.getOrder() * 2) {
+            List<DataBox> leftKeys = keys.subList(0, metadata.getOrder());
+            List<DataBox> rightKeys = keys.subList(metadata.getOrder() + 1, keys.size());
+
+            InnerNode leftNode = new InnerNode(metadata, bufferManager, keys, );
+            return Optional.of(new Pair<>(keys.get(metadata.getOrder()), ));
+        }
         return Optional.empty();
     }
 
